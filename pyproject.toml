@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "lsu-pylot"
+version = "0.1.0"
+description = ""
+authors = ["Darko Kolev <kolevdarko@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-telegram-bot = "^21.6"
+openai = "^1.52.1"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
