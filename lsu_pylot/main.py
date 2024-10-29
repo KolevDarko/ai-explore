@@ -14,10 +14,6 @@ load_dotenv()  # take environment variables from .env.
 tg_bot_token = os.getenv("TG_BOT_TOKEN")
 openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-messages = [
-    {"role": "system", "content": "You are a helpful assistant that answers questions."}
-]
-
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
@@ -30,6 +26,47 @@ df = pd.read_csv(csv_path, index_col=0)
 df["embeddings"] = df["embeddings"].apply(eval).apply(np.array)
 
 print("loaded")
+
+CODE_PROMPT = """
+Here are two input:output examples for code generation. Please use these and follow the styling for future requests that you think are pertinent to the request.
+Make sure All HTML is generated with the JSX flavoring.
+// SAMPLE 1
+// A Blue Box with 3 yellow cirles inside of it that have a red outline
+<div style={{   backgroundColor: 'blue',
+  padding: '20px',
+  display: 'flex',
+  justifyContent: 'space-around',
+  alignItems: 'center',
+  width: '300px',
+  height: '100px', }}>
+  <div style={{     backgroundColor: 'yellow',
+    borderRadius: '50%',
+    width: '50px',
+    height: '50px',
+    border: '2px solid red'
+  }}></div>
+  <div style={{     backgroundColor: 'yellow',
+    borderRadius: '50%',
+    width: '50px',
+    height: '50px',
+    border: '2px solid red'
+  }}></div>
+  <div style={{     backgroundColor: 'yellow',
+    borderRadius: '50%',
+    width: '50px',
+    height: '50px',
+    border: '2px solid red'
+  }}></div>
+</div>
+"""
+
+messages = [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant that answers questions.",
+    },
+    {"role": "system", "content": CODE_PROMPT},
+]
 
 
 async def mozilla(update: Update, context: ContextTypes.DEFAULT_TYPE):
