@@ -3,6 +3,7 @@ import os
 import logging
 import pandas as pd
 import numpy as np
+import requests
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -145,17 +146,30 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
+async def image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    response = openai.images.generate(
+        prompt=update.message.text, model="dall-e-3", n=1, size="1024x1024"
+    )
+    image_url = response.data[0].url
+    image_response = requests.get(image_url)
+    await context.bot.send_photo(
+        chat_id=update.effective_chat.id, photo=image_response.content
+    )
+
+
 if __name__ == "__main__":
     print("Starting...")
     application = ApplicationBuilder().token(tg_bot_token).build()
 
     start_handler = CommandHandler("start", start)
     mozilla_handler = CommandHandler("mozilla", mozilla)
+    image_handler = CommandHandler("image", image)
     chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
 
     application.add_handler(start_handler)
     application.add_handler(chat_handler)
     application.add_handler(mozilla_handler)
+    application.add_handler(image_handler)
 
     application.run_polling()
     print("Started")
