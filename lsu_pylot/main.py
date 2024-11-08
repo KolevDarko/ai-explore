@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from functions import functions, run_function
-from questions import answer_question
+from questions import answer_question, pinecone_answer
 
 load_dotenv()  # take environment variables from .env.
 
@@ -80,6 +80,11 @@ messages = [
 
 async def mozilla(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer = answer_question(df, question=update.message.text, debug=True)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
+
+
+async def pinecone_h(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    answer = pinecone_answer(question=update.message.text)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
 
 
@@ -163,6 +168,7 @@ if __name__ == "__main__":
 
     start_handler = CommandHandler("start", start)
     mozilla_handler = CommandHandler("mozilla", mozilla)
+    pinecone_handler = CommandHandler("pinecone", pinecone_h)
     image_handler = CommandHandler("image", image)
     chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
 
@@ -170,6 +176,7 @@ if __name__ == "__main__":
     application.add_handler(chat_handler)
     application.add_handler(mozilla_handler)
     application.add_handler(image_handler)
+    application.add_handler(pinecone_handler)
 
     application.run_polling()
     print("Started")

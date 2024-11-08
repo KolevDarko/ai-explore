@@ -1,13 +1,18 @@
+import traceback
 import numpy as np
 import pandas as pd
 from openai import OpenAI
 from typing import List
 from scipy import spatial
 from dotenv import load_dotenv
-
+from pinecone import Pinecone
 import os
 
 load_dotenv()
+
+pinecone_api_key = os.environ["PINECONE_API_KEY"]
+pc_model = "multilingual-e5-large"
+pc_index_name = "p-docs"
 
 
 def distances_from_embeddings(
@@ -98,4 +103,47 @@ def answer_question(
         return response.choices[0].message.content
     except Exception as e:
         print(e)
+        return ""
+
+
+def pinecone_search(query):
+    pc = Pinecone(api_key=pinecone_api_key)
+    query_embedding = pc.inference.embed(
+        model=pc_model, inputs=[query], parameters={"input_type": "query"}
+    )
+    index = pc.Index(pc_index_name)
+    results = index.query(
+        vector=query_embedding[0].values,
+        namespace="article1",
+        top_k=3,
+        include_values=False,
+        include_metadata=True,
+    )
+    return results
+
+
+def pinecone_answer(question):
+    matches = pinecone_search(question)
+    match_texts = [m["metadata"]["text"] for m in matches["matches"]]
+    context = "\n\n###\n\n".join(match_texts)
+    try:
+        llm_response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"""Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know.\"
+                    \n\nContext: {context}\n\n--\n\nQuestion: {question}\nSource:\nAnswer:
+                    """,
+                }
+            ],
+            temperature=0,
+            max_tokens=150,
+            top_p=1,
+            frequency_penalty=0,
+            presence_penalty=0,
+        )
+        return llm_response.choices[0].message.content
+    except Exception as e:
+        print(traceback.format_exc())
         return ""
